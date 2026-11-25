@@ -20,33 +20,38 @@ with no third-party packages and no network.
 """
 
 import os
+import sys
 
 JOKE = (
     "I asked IT for a second monitor, so they gave me a mirror "
     "\u2014 now I can watch myself do two jobs at once."
 )
 
-OUTPUT_PATH = "/output/entry.txt"
+DEFAULT_OUTPUT_PATH = "/output/entry.txt"
 
 
-def main() -> None:
-    joke = JOKE
+def validate(text: str) -> None:
+    """Gate: 1-200 characters, a single line, not only whitespace."""
+    if not text or not text.strip():
+        raise ValueError("joke must not be blank")
+    if len(text) > 200:
+        raise ValueError(f"joke is {len(text)} chars, over the 200 limit")
+    if "\n" in text or "\r" in text:
+        raise ValueError("joke must be a single line")
 
-    # Validation gate: the sealed scorer requires UTF-8 text of
-    # 1 to 200 characters, not only white space, on a single line.
-    if not joke.strip():
-        raise SystemExit("error: joke is blank")
-    if len(joke) > 200:
-        raise SystemExit(f"error: joke is {len(joke)} chars, over the 200 limit")
-    if "\n" in joke or "\r" in joke:
-        raise SystemExit("error: joke must be a single line")
 
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        f.write(joke)
-
-    print(joke)
+def main(argv: list[str] | None = None) -> int:
+    # Optional output path for local runs; the grader uses the default.
+    output_path = (argv or [None])[0] if argv else None
+    output_path = output_path or os.environ.get("ENTRY_OUTPUT") or DEFAULT_OUTPUT_PATH
+    validate(JOKE)
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(JOKE)
+    print(JOKE)
+    print(f"({len(JOKE)} characters)", file=sys.stderr)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main(sys.argv[1:]))
